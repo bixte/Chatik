@@ -41,15 +41,19 @@ namespace Chatik
                 passwordOption.RequireUppercase = false;
 
             }).AddEntityFrameworkStores<ChatikDbContext>();
-            services.AddSignalR();
-            services.AddCors(option =>
+            services.AddSignalR(option =>
+            {
+                option.EnableDetailedErrors = true;
+            });
+           /* services.AddCors(option =>
            {
                option.AddPolicy("MyAllowSpecificOrigins", policy =>
                {
                    policy.WithOrigins("http://localhost:3000/");
+                   policy.AllowAnyOrigin();
 
                });
-           });
+           });*/
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Chatik", Version = "v1" });
@@ -68,7 +72,7 @@ namespace Chatik
             app.UseHttpsRedirection();
 
             app.UseRouting();
-            app.UseCors("MyAllowSpecificOrigins");
+            /*app.UseCors("MyAllowSpecificOrigins");*/
             app.UseAuthentication();
             app.UseAuthorization();
 

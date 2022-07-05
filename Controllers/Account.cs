@@ -1,4 +1,5 @@
 ﻿using Chatik.DataModels;
+using Chatik.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -25,27 +26,40 @@ namespace Chatik.Controllers
 
         [Route("Registration")]
         [HttpPost]
-        public async Task<ActionResult> Registration(string name, string password)
+        public async Task<ActionResult> Registration(UserViewModel viewModel)
         {
-            var user = new User(name);
-            var result = await UserManager.CreateAsync(user, password);
-            if (result.Succeeded)
+            if (ModelState.IsValid)
             {
-                await SignInManager.SignInAsync(user, true);
-                return Ok();
+                var user = await UserManager.FindByNameAsync(viewModel.Name);
+                if (user == null)
+                {
+                    user = new(viewModel.Name);
+                    var result = await UserManager.CreateAsync(user, viewModel.Password);
+                    if (result.Succeeded)
+                    {
+                        await SignInManager.SignInAsync(user, true);
+                        return Ok();
+                    }
+                    else
+                        return BadRequest();
+                }
+                else
+                    return BadRequest("данный пользователь уже существует");
+                
             }
-            else
-                return BadRequest();
+            return BadRequest("не прошло валидацию");
+
+            
         }
 
         [Route("Login")]
         [HttpPost]
-        public async Task<ActionResult> Login(string name, string password)
+        public async Task<ActionResult> Login(UserViewModel viewModel)
         {
-            var user = await UserManager.FindByNameAsync(name);
+            var user = await UserManager.FindByNameAsync(viewModel.Name);
             if (user != null)
             {
-                var result = await SignInManager.PasswordSignInAsync(user, password, true, false);
+                var result = await SignInManager.PasswordSignInAsync(user, viewModel.Password, true, false);
                 if (result.Succeeded)
                     return Ok();
                 else
