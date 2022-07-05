@@ -18,10 +18,7 @@ namespace Chatik.Controllers
     [ApiController]
     public class Dialogs : ControllerBase
     {
-
-
         public ChatikDbContext ChatikDbContext { get; }
-
         public UserManager<User> UserManager { get; }
 
         public Dialogs(ChatikDbContext chatikDbContext, UserManager<User> userManager)
@@ -49,9 +46,8 @@ namespace Chatik.Controllers
             var httpUserFinder = new HttpUserFinder(HttpContext, UserManager);
             var userCurrent = await httpUserFinder.GetUserAsync();
 
-            var interlocutor = await UserManager.FindByIdAsync(id.ToString());
+            var interlocutor = await UserManager.FindByIdAsync(id);
             
-
             await ChatikDbContext.Dialogs.AddAsync(new Dialog
             {
                 Users = new List<User>() { userCurrent, interlocutor}

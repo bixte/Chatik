@@ -14,6 +14,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using Chatik.Hubs;
 
 namespace Chatik
 {
@@ -23,12 +24,10 @@ namespace Chatik
         {
             Configuration = configuration;
         }
-        public IConfiguration Configuration { get; }
+        private readonly IConfiguration Configuration;
 
         public void ConfigureServices(IServiceCollection services)
         {
-            
-            /*services.AddSignalR();*/
             services.AddControllers();
             services.AddDbContext<ChatikDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("Default")));
             services.AddIdentity<User, IdentityRole>(option =>
@@ -40,9 +39,17 @@ namespace Chatik
                 passwordOption.RequireLowercase = false;
                 passwordOption.RequireNonAlphanumeric = false;
                 passwordOption.RequireUppercase = false;
-                
+
             }).AddEntityFrameworkStores<ChatikDbContext>();
             services.AddSignalR();
+            services.AddCors(option =>
+           {
+               option.AddPolicy("MyAllowSpecificOrigins", policy =>
+               {
+                   policy.WithOrigins("http://localhost:3000/");
+
+               });
+           });
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Chatik", Version = "v1" });
@@ -61,13 +68,14 @@ namespace Chatik
             app.UseHttpsRedirection();
 
             app.UseRouting();
-
+            app.UseCors("MyAllowSpecificOrigins");
             app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHub<Messager>("/messager");
             });
         }
     }

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Chatik.Models.Senders
 {
-    public class DialogFormatter : IFormatter
+    public class DialogFormatter : IFormatter<List<DialogModelAPI>>
     {
         private readonly List<Dialog> dialogs;
         private readonly DialogInterlocutorFinder InterlocutorUserFinder;
