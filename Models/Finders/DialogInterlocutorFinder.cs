@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Chatik.Models.Finders
 {
-    public class DialogInterlocutorFinder : IFinder
+    public class DialogInterlocutorFinder : IFinder<Task<IEnumerable<User>>>
     {
         private readonly HttpUserFinder httpUserFinder;
 
@@ -16,9 +16,14 @@ namespace Chatik.Models.Finders
             this.httpUserFinder = httpUserFinder;
         }
 
+        public Task<IEnumerable<User>> FindAsync()
+        {
+            throw new System.NotImplementedException();
+        }
+
         public async Task<IEnumerable<User>> GetInterlocutorAsync(Dialog dialog)
         {
-            var currentUser = await httpUserFinder.GetUserAsync();
+            var currentUser = await httpUserFinder.FindAsync();
             return dialog.Users.Where(u => u.UserName != currentUser.UserName);
         }
     }
