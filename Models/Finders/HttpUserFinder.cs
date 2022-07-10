@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Chatik.Models.Finder
 {
-    public class HttpUserFinder : IFinder
+    public class HttpUserFinder : IFinder<Task<User>>
     {
         private readonly UserManager<User> UserManager;
         private readonly ClaimsPrincipal User;
@@ -16,7 +16,9 @@ namespace Chatik.Models.Finder
             UserManager = userManager;
             User = httpContext.User;
         }
-        public async Task<User> GetUserAsync() => await UserManager.FindByNameAsync(User.Identity.Name);
+
+
+        public async Task<User> FindAsync() => await UserManager.FindByNameAsync(User.Identity.Name);
 
     }
 }

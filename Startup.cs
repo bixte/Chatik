@@ -45,15 +45,13 @@ namespace Chatik
             {
                 option.EnableDetailedErrors = true;
             });
-           /* services.AddCors(option =>
-           {
-               option.AddPolicy("MyAllowSpecificOrigins", policy =>
-               {
-                   policy.WithOrigins("http://localhost:3000/");
-                   policy.AllowAnyOrigin();
-
-               });
-           });*/
+            services.AddCors(option =>
+            {
+                option.AddPolicy("MyAllowSpecificOrigins", policy =>
+                {
+                    policy.AllowAnyOrigin();
+                });
+            });
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Chatik", Version = "v1" });
@@ -68,11 +66,8 @@ namespace Chatik
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Chatik v1"));
             }
-
-            app.UseHttpsRedirection();
-
             app.UseRouting();
-            /*app.UseCors("MyAllowSpecificOrigins");*/
+            app.UseCors("MyAllowSpecificOrigins");
             app.UseAuthentication();
             app.UseAuthorization();
 

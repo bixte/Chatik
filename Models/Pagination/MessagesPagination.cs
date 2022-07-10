@@ -3,21 +3,11 @@ using System.Collections.Generic;
 
 namespace Chatik.Models.Pagination
 {
-    public class MessagesPagination
+    public class PaginatedList<T> : List<T>
     {
-        private readonly List<Message> messages;
-
-        public MessagesPagination(List<Message> messages, int messagePage)
+        public PaginatedList(List<T> items )
         {
-            this.messages = messages;
-            MessagePage = messagePage;
+            AddRange(items);
         }
-
-        public int MessagePage { get; }
-
-        /*public List<Message> GetMessages()
-        {
-
-        }*/
     }
 }

@@ -34,7 +34,7 @@ namespace Chatik.Controllers
             await ChatikDbContext.Messages.LoadAsync();
 
             var httpUserFinder = new HttpUserFinder(HttpContext, UserManager);
-            var userCurrent = await httpUserFinder.GetUserAsync();
+            var userCurrent = await httpUserFinder.FindAsync();
             DialogFormatter dialogFormatter = new(userCurrent.Dialogs, new(httpUserFinder));
             var dialogAPI = await dialogFormatter.FormatteAsync();
             return new ObjectResult(dialogAPI);
@@ -44,7 +44,7 @@ namespace Chatik.Controllers
         public async Task<ActionResult> CreateDialog(string id)
         {
             var httpUserFinder = new HttpUserFinder(HttpContext, UserManager);
-            var userCurrent = await httpUserFinder.GetUserAsync();
+            var userCurrent = await httpUserFinder.FindAsync();
 
             var interlocutor = await UserManager.FindByIdAsync(id);
             

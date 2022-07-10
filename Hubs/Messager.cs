@@ -4,6 +4,6 @@ namespace Chatik.Hubs
 {
     public class Messager:Hub
     {
-        /*asddsasadasdasd*/
+        
     }
 }
