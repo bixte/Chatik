@@ -1,4 +1,5 @@
 ﻿using Chatik.DataModels;
+using Chatik.Models.Finder;
 using Chatik.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -67,7 +68,15 @@ namespace Chatik.Controllers
                 
             }
             return BadRequest(new { error = "пользователь не найден" });
+        }
 
+        [Route("Profile")]
+        [HttpGet]
+        public async Task<ActionResult> Profile()
+        {
+            var httpUserFinder = new HttpUserFinder(HttpContext, UserManager);
+            var user  = await httpUserFinder.FindAsync();
+            return Ok(user);
         }
 
     }
