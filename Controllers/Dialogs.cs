@@ -1,15 +1,12 @@
 ﻿using Chatik.DataModels;
-using Chatik.Models.Finder;
-using Chatik.Models.Senders;
-using Microsoft.AspNetCore.Http;
+using Chatik.Models.Binders;
+using Chatik.Models.Finders;
+using Chatik.Models.Paginations;
+using Chatik.Models.Validators;
+using Chatik.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
+using System;
 using System.Threading.Tasks;
 
 namespace Chatik.Controllers
@@ -18,46 +15,100 @@ namespace Chatik.Controllers
     [ApiController]
     public class Dialogs : ControllerBase
     {
-        public ChatikDbContext ChatikDbContext { get; }
-        public UserManager<User> UserManager { get; }
+        private readonly UserManager<User> userManager;
+        private readonly DialogsRepository dialogsRepository;
+        private readonly MessagesRepository messagesRepository;
 
-        public Dialogs(ChatikDbContext chatikDbContext, UserManager<User> userManager)
+        public Dialogs(UserManager<User> userManager, DialogsRepository dialogsRepository, MessagesRepository messagesRepository)
         {
-            ChatikDbContext = chatikDbContext;
-            UserManager = userManager;
+
+            this.userManager = userManager;
+            this.dialogsRepository = dialogsRepository;
+            this.messagesRepository = messagesRepository;
         }
 
         [HttpGet]
-        public async Task<ActionResult> GetDialogs()
+        public async Task<ActionResult> GetDialogs([FromQuery] PaginationOption option)
         {
-            await ChatikDbContext.Dialogs.LoadAsync();
-            await ChatikDbContext.Messages.LoadAsync();
-
-            var httpUserFinder = new HttpUserFinder(HttpContext, UserManager);
-            var userCurrent = await httpUserFinder.FindAsync();
-            DialogFormatter dialogFormatter = new(userCurrent.Dialogs, new(httpUserFinder));
-            var dialogAPI = await dialogFormatter.FormatteAsync();
-            return new ObjectResult(dialogAPI);
-        }
-        [HttpPost]
-        [Route("{id}")]
-        public async Task<ActionResult> CreateDialog(string id)
-        {
-            var httpUserFinder = new HttpUserFinder(HttpContext, UserManager);
-            var userCurrent = await httpUserFinder.FindAsync();
-
-            var interlocutor = await UserManager.FindByIdAsync(id);
-            
-            await ChatikDbContext.Dialogs.AddAsync(new Dialog
+            if (User.Identity.IsAuthenticated)
             {
-                Users = new List<User>() { userCurrent, interlocutor}
-            });
-            var result = await ChatikDbContext.SaveChangesAsync();
-            if (result > 0)
-                return Ok();
-            else
-                return BadRequest();
+                var dialogs = await dialogsRepository.GetDialogsAsync(new HttpUserFinder(HttpContext, userManager));
+
+                var dialogPaginated = await PaginatedList<object>.CreateAsync(dialogs, option.CurrentPage, option.PageSize);
+                return Ok(dialogPaginated);
+            }
+            return Unauthorized();
         }
+
+
+        [HttpPost()]
+        public async Task<ActionResult> CreateDialog([FromQuery] string idUser)
+        {
+            if (User.Identity.IsAuthenticated)
+            {
+                try
+                {
+                    await dialogsRepository.AddDialogAsync(new HttpUserFinder(HttpContext, userManager),
+                                                       idUser,
+                                                       new GeneralDialogValidator(),
+                                                       new GeneralDialogBinder());
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest(ex.Message);
+                }
+                return Ok();
+            }
+            else
+            {
+                return Unauthorized();
+            }
+        }
+
+
+
+        [HttpGet("{dialogId}")]
+        public async Task<ActionResult> GetMessagesAsync(int dialogId)
+        {
+            if (User.Identity.IsAuthenticated)
+            {
+                var dialog = await messagesRepository.GetMessagesAsync(dialogId,
+                                                              new HttpUserFinder(HttpContext, userManager),
+                                                              new DialogAccessValidator());
+                return Ok(dialog);
+            }
+            else
+            {
+                return Unauthorized();
+            }
+        }
+        [HttpPost("{dialogId}")]
+        public async Task<ActionResult> SendMessageAsync(int dialogId, string message)
+        {
+            if (User.Identity.IsAuthenticated)
+            {
+                try
+                {
+                    await messagesRepository.SendMessageAsync(dialogId,
+                                                              message,
+                                                              new HttpUserFinder(HttpContext, userManager),
+                                                              new GeneralDialogValidator(),
+                                                              new DialogAccessValidator(),
+                                                              new MessageModelBinder());
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest(ex.Message);
+                }
+                return Ok();
+            }
+            else
+            {
+                return Unauthorized();
+            }
+        }
+
+
     }
 
 }

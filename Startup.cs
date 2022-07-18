@@ -15,6 +15,10 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Chatik.Hubs;
+using Microsoft.AspNetCore.CookiePolicy;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Chatik.Repositories;
+using Chatik.Models.Services;
 
 namespace Chatik
 {
@@ -29,7 +33,9 @@ namespace Chatik
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-            services.AddDbContext<ChatikDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("Default")));
+            services.AddDbContext<ChatikDbContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("Default")));
+
             services.AddIdentity<User, IdentityRole>(option =>
             {
                 PasswordOptions passwordOption = option.Password;
@@ -41,21 +47,21 @@ namespace Chatik
                 passwordOption.RequireUppercase = false;
 
             }).AddEntityFrameworkStores<ChatikDbContext>();
+
+            services.ConfigureApplicationCookie(config =>
+                config.Cookie.MaxAge = TimeSpan.FromMinutes(30));
+
             services.AddSignalR(option =>
-            {
-                option.EnableDetailedErrors = true;
-            });
+                option.EnableDetailedErrors = true);
+
             services.AddCors(option =>
-            {
                 option.AddPolicy("MyAllowSpecificOrigins", policy =>
-                {
-                    policy.AllowAnyOrigin();
-                });
-            });
+                    policy.AllowAnyOrigin()));
+
             services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Chatik", Version = "v1" });
-            });
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Chatik", Version = "v1" }));
+
+            services.AddRepositories();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

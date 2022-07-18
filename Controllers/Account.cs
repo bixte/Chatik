@@ -1,9 +1,11 @@
 ﻿using Chatik.DataModels;
-using Chatik.Models.Finder;
+using Chatik.Models.Finders;
 using Chatik.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Chatik.Controllers
@@ -15,13 +17,11 @@ namespace Chatik.Controllers
         private readonly SignInManager<User> SignInManager;
         private readonly UserManager<User> UserManager;
 
-        public ILogger<Account> Logger { get; }
 
-        public Account(SignInManager<User> signInManager, UserManager<User> userManager, ILogger<Account> logger)
+        public Account(SignInManager<User> signInManager, UserManager<User> userManager)
         {
             SignInManager = signInManager;
             UserManager = userManager;
-            Logger = logger;
         }
 
 
@@ -34,7 +34,7 @@ namespace Chatik.Controllers
                 var user = await UserManager.FindByNameAsync(viewModel.Name);
                 if (user == null)
                 {
-                    user = new(viewModel.Name);
+                    user = new(viewModel.Name) { UserName = viewModel.Name };
                     var result = await UserManager.CreateAsync(user, viewModel.Password);
                     if (result.Succeeded)
                     {
@@ -46,11 +46,11 @@ namespace Chatik.Controllers
                 }
                 else
                     return BadRequest("данный пользователь уже существует");
-                
+
             }
             return BadRequest("не прошло валидацию");
 
-            
+
         }
 
         [Route("Login")]
@@ -65,18 +65,21 @@ namespace Chatik.Controllers
                     return Ok();
                 else
                     return BadRequest(new { error = "неверный логин или пароль" });
-                
+
             }
             return BadRequest(new { error = "пользователь не найден" });
         }
 
-        [Route("Profile")]
         [HttpGet]
-        public async Task<ActionResult> Profile()
+        public async Task<ActionResult> GetProfile()
         {
-            var httpUserFinder = new HttpUserFinder(HttpContext, UserManager);
-            var user  = await httpUserFinder.FindAsync();
-            return Ok(user);
+            if (User.Identity.IsAuthenticated)
+            {
+                var httpUserFinder = new HttpUserFinder(HttpContext, UserManager);
+                var user = await httpUserFinder.FindAsync();
+                return Ok(user);
+            }
+            return NotFound("требуется авторизоваться");
         }
 
     }
